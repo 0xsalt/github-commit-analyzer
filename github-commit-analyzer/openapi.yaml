@@ -1,0 +1,461 @@
+openapi: 3.0.3
+info:
+  title: GitHub Commit Analyzer API
+  description: API for analyzing GitHub repository commits and comparing forks with upstream repositories
+  version: 1.0.0
+  contact:
+    name: API Support
+servers:
+  - url: http://localhost:3000
+    description: Development server
+  - url: https://your-deployed-app.com
+    description: Production server
+
+paths:
+  /api/repository/validate:
+    post:
+      summary: Validate GitHub repository
+      description: Validates if a GitHub repository exists and is accessible
+      operationId: validateRepository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - repositoryUrl
+              properties:
+                repositoryUrl:
+                  type: string
+                  format: uri
+                  description: GitHub repository URL (e.g., https://github.com/owner/repo)
+                  example: "https://github.com/vercel/next.js"
+      responses:
+        '200':
+          description: Repository validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    description: Whether the repository is valid and accessible
+                  repository:
+                    $ref: '#/components/schemas/Repository'
+                  error:
+                    type: string
+                    description: Error message if validation failed
+              examples:
+                valid_repo:
+                  value:
+                    valid: true
+                    repository:
+                      id: 70107786
+                      name: "next.js"
+                      full_name: "vercel/next.js"
+                      owner: "vercel"
+                      is_fork: false
+                      default_branch: "canary"
+                      html_url: "https://github.com/vercel/next.js"
+                invalid_repo:
+                  value:
+                    valid: false
+                    error: "Repository not found or not accessible"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/commits/analyze:
+    post:
+      summary: Analyze repository commits
+      description: Fetches and analyzes the last N commits from a GitHub repository with AI summarization
+      operationId: analyzeCommits
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - repositoryUrl
+                - commitCount
+              properties:
+                repositoryUrl:
+                  type: string
+                  format: uri
+                  description: GitHub repository URL
+                  example: "https://github.com/vercel/next.js"
+                commitCount:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  description: Number of recent commits to analyze
+                  example: 10
+                branch:
+                  type: string
+                  description: Branch name (defaults to repository's default branch)
+                  example: "main"
+                githubToken:
+                  type: string
+                  description: Optional GitHub personal access token for higher rate limits
+      responses:
+        '200':
+          description: Commit analysis results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  repository:
+                    $ref: '#/components/schemas/Repository'
+                  commits:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CommitAnalysis'
+                  summary:
+                    $ref: '#/components/schemas/CommitSummary'
+                  metadata:
+                    type: object
+                    properties:
+                      total_commits_analyzed:
+                        type: integer
+                      analysis_date:
+                        type: string
+                        format: date-time
+                      branch_analyzed:
+                        type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/forks/compare:
+    post:
+      summary: Compare fork with upstream repository
+      description: Compares a fork repository with its upstream to show differences and analyze commits
+      operationId: compareForkWithUpstream
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - forkUrl
+                - upstreamUrl
+              properties:
+                forkUrl:
+                  type: string
+                  format: uri
+                  description: Fork repository URL
+                  example: "https://github.com/user/next.js"
+                upstreamUrl:
+                  type: string
+                  format: uri
+                  description: Upstream repository URL
+                  example: "https://github.com/vercel/next.js"
+                branch:
+                  type: string
+                  description: Branch to compare (defaults to main/master)
+                  example: "main"
+                githubToken:
+                  type: string
+                  description: Optional GitHub personal access token for higher rate limits
+      responses:
+        '200':
+          description: Fork comparison results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fork_repository:
+                    $ref: '#/components/schemas/Repository'
+                  upstream_repository:
+                    $ref: '#/components/schemas/Repository'
+                  comparison:
+                    $ref: '#/components/schemas/ForkComparison'
+                  commits_analysis:
+                    type: object
+                    properties:
+                      ahead_commits:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CommitAnalysis'
+                      behind_commits:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CommitAnalysis'
+                  summary:
+                    $ref: '#/components/schemas/ForkSummary'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Repository:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: GitHub repository ID
+        name:
+          type: string
+          description: Repository name
+        full_name:
+          type: string
+          description: Full repository name (owner/repo)
+        owner:
+          type: string
+          description: Repository owner username
+        is_fork:
+          type: boolean
+          description: Whether this repository is a fork
+        default_branch:
+          type: string
+          description: Default branch name
+        html_url:
+          type: string
+          format: uri
+          description: GitHub repository URL
+        parent:
+          type: object
+          description: Parent repository if this is a fork
+          properties:
+            full_name:
+              type: string
+            html_url:
+              type: string
+
+    CommitAnalysis:
+      type: object
+      properties:
+        sha:
+          type: string
+          description: Commit SHA hash
+        message:
+          type: string
+          description: Commit message
+        author:
+          type: object
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+            username:
+              type: string
+        date:
+          type: string
+          format: date-time
+          description: Commit date
+        stats:
+          type: object
+          properties:
+            additions:
+              type: integer
+            deletions:
+              type: integer
+            total:
+              type: integer
+        files_changed:
+          type: array
+          items:
+            type: object
+            properties:
+              filename:
+                type: string
+              status:
+                type: string
+                enum: [added, modified, removed, renamed]
+              additions:
+                type: integer
+              deletions:
+                type: integer
+        ai_summary:
+          type: string
+          description: AI-generated summary of the commit's purpose and changes
+        html_url:
+          type: string
+          format: uri
+          description: GitHub commit URL
+
+    CommitSummary:
+      type: object
+      properties:
+        overall_purpose:
+          type: string
+          description: AI-generated overall purpose of the analyzed commits
+        key_changes:
+          type: array
+          items:
+            type: string
+          description: List of key changes identified across commits
+        categories:
+          type: object
+          properties:
+            bug_fixes:
+              type: integer
+            features:
+              type: integer
+            refactoring:
+              type: integer
+            documentation:
+              type: integer
+            testing:
+              type: integer
+            other:
+              type: integer
+        total_changes:
+          type: object
+          properties:
+            files_modified:
+              type: integer
+            lines_added:
+              type: integer
+            lines_deleted:
+              type: integer
+        time_period:
+          type: object
+          properties:
+            first_commit_date:
+              type: string
+              format: date-time
+            last_commit_date:
+              type: string
+              format: date-time
+        themes:
+          type: object
+          properties:
+            big_picture_summary:
+              type: string
+              description: High-level summary of development themes and patterns
+            dominant_themes:
+              type: array
+              items:
+                type: string
+              description: Main thematic areas of development focus
+            technical_focus_areas:
+              type: array
+              items:
+                type: string
+              description: Technical areas receiving the most attention
+        trajectory:
+          type: object
+          properties:
+            project_direction:
+              type: string
+              description: Analysis of where the project is heading
+            development_momentum:
+              type: string
+              description: Assessment of development pace and approach
+            upcoming_priorities:
+              type: array
+              items:
+                type: string
+              description: Identified priorities based on recent patterns
+            architectural_evolution:
+              type: string
+              description: Analysis of architectural changes and evolution
+
+    ForkComparison:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ahead, behind, identical, diverged]
+          description: Relationship status between fork and upstream
+        ahead_by:
+          type: integer
+          description: Number of commits the fork is ahead
+        behind_by:
+          type: integer
+          description: Number of commits the fork is behind
+        total_commits:
+          type: integer
+          description: Total number of different commits
+        base_commit:
+          type: object
+          properties:
+            sha:
+              type: string
+            message:
+              type: string
+        merge_base_commit:
+          type: object
+          properties:
+            sha:
+              type: string
+            message:
+              type: string
+
+    ForkSummary:
+      type: object
+      properties:
+        sync_status:
+          type: string
+          description: Human-readable sync status
+        recommendation:
+          type: string
+          description: AI-generated recommendation for the fork maintainer
+        key_differences:
+          type: array
+          items:
+            type: string
+          description: Key differences between fork and upstream
+        upstream_highlights:
+          type: array
+          items:
+            type: string
+          description: Notable changes in upstream that fork is missing
+        fork_unique_features:
+          type: array
+          items:
+            type: string
+          description: Unique features or changes in the fork
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        details:
+          type: object
+          description: Additional error details
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Optional GitHub personal access token for higher rate limits
+
+security:
+  - BearerAuth: []
+  - {} # Allow unauthenticated requests with lower rate limits
