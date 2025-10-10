@@ -9,7 +9,7 @@ Analyze GitHub repository commits and compare forks with an intuitive web interf
 
 ---
 
-## Quick Start (Docker - Recommended)
+## Quick Start: Docker
 
 The fastest way to run this application is using the pre-compiled Docker image:
 
