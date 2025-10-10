@@ -1,60 +1,30 @@
-# GitHub Commit Analyzer - Production Dockerfile
-# Simple, obvious, production-ready Next.js container
+# GitHub Commit Analyzer - Optimized Production Dockerfile
+# Build locally, deploy artifacts (10-15s build time vs 130s)
 
-# Use official Node.js 20 Alpine image (smallest, fastest)
-FROM node:20-alpine AS base
+FROM node:20-alpine AS runner
 
-# Install dependencies only when needed
-FROM base AS deps
-# Set working directory
 WORKDIR /app
 
-# Copy dependency files
-COPY package.json package-lock.json ./
-
-# Install ALL dependencies (including dev dependencies needed for build)
-RUN npm ci
-
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-
-# Copy all dependencies from deps stage (includes dev dependencies for build)
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copy all source files
-COPY . .
-
-# Build Next.js application
-# This generates optimized production build in .next folder
-# Requires TypeScript, ESLint, and other dev dependencies
-RUN npm run build
-
-# Production image - run the built application
-FROM base AS runner
-WORKDIR /app
-
-# Set to production environment
 ENV NODE_ENV=production
 
-# Don't run as root user (security best practice)
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Create non-root user for security
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
-# Copy built application from builder stage
-# Note: public folder is optional - only copy if it exists
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Copy pre-built Next.js artifacts
+# Build locally first with: npm run build
+COPY --chown=nextjs:nodejs .next/standalone ./
+COPY --chown=nextjs:nodejs .next/static ./.next/static
 
 # Switch to non-root user
 USER nextjs
 
-# Expose port 3000 (Next.js default)
+# Expose Next.js port
 EXPOSE 3000
 
-# Set port environment variable
+# Set runtime environment
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Start the Next.js production server
+# Start the production server
 CMD ["node", "server.js"]
