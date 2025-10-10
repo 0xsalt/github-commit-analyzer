@@ -12,14 +12,14 @@ WORKDIR /app
 # Copy dependency files
 COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including dev dependencies needed for build)
+RUN npm ci
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 
-# Copy dependencies from deps stage
+# Copy all dependencies from deps stage (includes dev dependencies for build)
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copy all source files
@@ -27,6 +27,7 @@ COPY . .
 
 # Build Next.js application
 # This generates optimized production build in .next folder
+# Requires TypeScript, ESLint, and other dev dependencies
 RUN npm run build
 
 # Production image - run the built application
