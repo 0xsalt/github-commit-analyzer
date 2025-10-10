@@ -1,11 +1,11 @@
 # Docker Deployment Guide
 
-Simple, one-command Docker deployment for GitHub Commit Analyzer.
+Pre-compiled Docker images for instant deployment. No build required!
 
-## Quick Start
+## For End Users (Download & Run)
 
 ```bash
-# Start the application
+# Pull the latest image and start
 docker compose up
 
 # Access at http://localhost:3030
@@ -13,9 +13,35 @@ docker compose up
 
 That's it! 🎉
 
+The image is pre-compiled and published to Docker Hub. You're running the exact same container the developer built.
+
 ---
 
-## Commands
+## For Developers (Build & Publish)
+
+### First Time Setup
+```bash
+# Login to Docker Hub
+docker login
+```
+
+### Build and Publish
+```bash
+# Make executable (first time only)
+chmod +x docker-build-push.sh
+
+# Build and push to Docker Hub
+./docker-build-push.sh
+
+# Or with a specific tag
+./docker-build-push.sh v1.0.0
+```
+
+This builds the image ONCE and publishes it to Docker Hub. All users can then pull the pre-compiled image.
+
+---
+
+## Commands (End Users)
 
 ### Start (with logs)
 ```bash
@@ -32,9 +58,10 @@ docker compose up -d
 docker compose down
 ```
 
-### Rebuild (after code changes)
+### Update to latest version
 ```bash
-docker compose up --build
+docker compose pull
+docker compose up
 ```
 
 ### View logs
@@ -108,18 +135,18 @@ docker ps -a
 
 ## How It Works
 
-**BuildKit Optimization:**
-- Uses Docker BuildKit cache mounts for intelligent caching
-- First build: ~130s (installs all dependencies, compiles app)
-- Subsequent builds with code changes: ~20-30s (reuses cached packages)
-- Subsequent builds without changes: ~5s (fully cached)
+**Pre-compiled Image Distribution:**
+- Developer builds image ONCE (~130s) and pushes to Docker Hub
+- End users pull pre-compiled image (~10-30s depending on internet)
+- End users run immediately (no compilation on their machine!)
+- Everyone runs the exact same container ("ship your machine" principle)
 
-**Build Stages:**
+**Build Stages (Developer Only):**
 1. **deps**: Install npm packages (with BuildKit cache)
 2. **builder**: Compile Next.js app (with Next.js cache)
 3. **runner**: Minimal production runtime (only artifacts, no build tools)
 
-**Result**: Smart caching = faster iteration during development
+**Result**: Users get instant deployment, developers maintain quality control
 
 ---
 
@@ -170,16 +197,17 @@ For production, consider:
 
 ## Comparison: Docker vs Vercel
 
-| Feature | Docker | Vercel |
-|---------|--------|--------|
-| **Setup** | One command | Click deploy |
+| Feature | Docker (Pre-compiled) | Vercel |
+|---------|----------------------|--------|
+| **Setup** | `docker compose up` | Click deploy |
+| **Build Time** | None (pulls pre-compiled) | ~2-3 minutes per deploy |
 | **Cost** | Self-hosted (your server) | Free tier available |
 | **Control** | Full control | Managed service |
-| **Best For** | Self-hosting, privacy | Quick deployments |
+| **Best For** | Self-hosting, privacy, air-gapped | Quick deployments, auto-scaling |
 
 **Recommendation**:
-- Use **Vercel** for easiest deployment
-- Use **Docker** for self-hosting or air-gapped environments
+- Use **Docker** for instant deployment with pre-compiled images
+- Use **Vercel** for managed infrastructure with auto-scaling
 
 ---
 
