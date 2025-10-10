@@ -6,9 +6,6 @@ Analyze GitHub repository commits and compare forks with an intuitive web interf
 
 - **Commit Analysis**: Deep dive into repository commit history with detailed statistics
 - **Fork Comparison**: Compare commits between original repository and forks
-- **Repository Validation**: Verify GitHub repository URLs before analysis
-- **Dark Mode**: Toggle between light and dark themes for comfortable viewing
-- **Real-time Analysis**: Fetch and analyze commits on-demand
 
 ---
 
