@@ -108,18 +108,18 @@ docker ps -a
 
 ## How It Works
 
-1. **Dockerfile** builds the app in 3 stages:
-   - Install dependencies
-   - Build Next.js application
-   - Create minimal production image
+**BuildKit Optimization:**
+- Uses Docker BuildKit cache mounts for intelligent caching
+- First build: ~130s (installs all dependencies, compiles app)
+- Subsequent builds with code changes: ~20-30s (reuses cached packages)
+- Subsequent builds without changes: ~5s (fully cached)
 
-2. **docker-compose.yaml** runs the built image:
-   - Maps port 3030 → 3000
-   - Sets production environment
-   - Enables health checks
-   - Auto-restarts on failure
+**Build Stages:**
+1. **deps**: Install npm packages (with BuildKit cache)
+2. **builder**: Compile Next.js app (with Next.js cache)
+3. **runner**: Minimal production runtime (only artifacts, no build tools)
 
-3. **Result**: Production-ready Next.js app in a container
+**Result**: Smart caching = faster iteration during development
 
 ---
 
