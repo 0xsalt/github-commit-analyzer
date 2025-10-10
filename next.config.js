@@ -1,29 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "source.unsplash.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "ext.same-assets.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "ugc.same-assets.com",
-        pathname: "/**",
-      },
-    ],
-  },
+  // Vercel image optimization enabled by default
+  // Add remotePatterns here if you need to load images from external domains
+
+  // Enable standalone output for Docker deployments
+  output: 'standalone',
 };
 
 module.exports = nextConfig;

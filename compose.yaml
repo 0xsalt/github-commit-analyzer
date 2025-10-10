@@ -1,0 +1,21 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: github-commit-analyzer
+    # Port mapping: host:container
+    # Access at http://localhost:3030
+    ports:
+      - "3030:3000"
+    environment:
+      - NODE_ENV=production
+      # Optional: Add GitHub token for higher rate limits
+      # - GITHUB_TOKEN=your_token_here
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
