@@ -6,7 +6,7 @@ services:
     image: 0xsalt/github-analyzer:latest
 
     ports:
-      - "3030:3000"  # HOST:CONTAINER - Access at http://localhost:3030
+      - "3030:3030"  # HOST:CONTAINER - Access at http://localhost:3030
 
     environment:
       - NODE_ENV=production
@@ -17,7 +17,7 @@ services:
 
     # Health check
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3030', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
       interval: 30s
       timeout: 10s
       retries: 3
