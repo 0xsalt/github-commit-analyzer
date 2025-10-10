@@ -1,5 +1,0 @@
-{
-  "/api/commits/analyze/route": "app/api/commits/analyze/route.js",
-  "/api/forks/compare/route": "app/api/forks/compare/route.js",
-  "/page": "app/page.js"
-}
